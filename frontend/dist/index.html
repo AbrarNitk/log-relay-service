@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Streamer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="app">
+        <!-- Background Elements -->
+        <div class="bg-gradient"></div>
+        <div class="bg-blur"></div>
+
+        <header>
+            <div class="brand">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+                </svg>
+                <span>LogStream</span>
+            </div>
+        </header>
+
+        <main>
+            <!-- Page 1: Input -->
+            <section id="input-page" class="view active">
+                <div class="card glass fade-in-up">
+                    <div class="card-header">
+                        <h1>Start Streaming</h1>
+                        <p>Enter the Run ID to connect to the live log stream.</p>
+                    </div>
+
+                    <form id="stream-form">
+                        <div class="form-group">
+                            <label for="run-id">Run ID</label>
+                            <div class="input-wrapper">
+                                <input type="text" id="run-id" placeholder="e.g. 12345" autocomplete="off" required>
+                                <span class="input-focus-border"></span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="filter-pattern">Filter Pattern (Optional)</label>
+                            <div class="input-wrapper">
+                                <input type="text" id="filter-pattern" placeholder="e.g. error" autocomplete="off">
+                                <span class="input-focus-border"></span>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn primary glow-effect">
+                            Start Stream
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M5 12h14M12 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Page 2: Logs -->
+            <section id="logs-page" class="view">
+                <div class="logs-layout fade-in">
+                    <div class="logs-toolbar glass">
+                        <div class="active-status">
+                            <span class="status-dot pulse"></span>
+                            <span class="label">Streaming Run ID:</span>
+                            <span id="display-run-id" class="value">--</span>
+                        </div>
+                        <div class="actions">
+                            <button id="clear-btn" class="btn text-only" title="Clear Logs">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path
+                                        d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                                    </path>
+                                </svg>
+                            </button>
+                            <button id="stop-btn" class="btn secondary small">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                </svg>
+                                Stop & Back
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="terminal-window glass">
+                        <div class="terminal-header">
+                            <div class="circle red"></div>
+                            <div class="circle yellow"></div>
+                            <div class="circle green"></div>
+                            <span class="terminal-title">Output</span>
+                        </div>
+                        <div id="logs-container" class="terminal-body custom-scrollbar">
+                            <div id="logs-output"></div>
+                            <div id="status-message" class="system-msg">Ready to connect...</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2026 LogStream. Powered by Rust & Axum.</p>
+        </footer>
+    </div>
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>

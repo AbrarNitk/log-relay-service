@@ -1,0 +1,5 @@
+{
+    "url": "nats://localhost:4222",
+    "username": "nats",
+    "password": "nats"
+}

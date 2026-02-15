@@ -1,0 +1,12 @@
+{
+    "name": "logs-stream-frontend",
+    "module": "app.js",
+    "type": "module",
+    "scripts": {
+        "dev": "bun x serve .",
+        "build": "rm -rf dist && mkdir -p dist && cp index.html style.css app.js dist/"
+    },
+    "devDependencies": {
+        "serve": "latest"
+    }
+}
