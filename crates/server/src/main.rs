@@ -1,17 +1,19 @@
 mod api;
+mod config;
 mod controllers;
 mod service;
 mod state;
 
+use crate::config::Config;
+use crate::service::stream_manager::StreamManager;
 use crate::state::AppState;
-use nats_utils::NatsConfig;
-use std::sync::Arc;
 use tower_http::{cors::CorsLayer, services::ServeDir, trace::TraceLayer};
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
 async fn main() {
+    // 1. Tracing
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -20,48 +22,27 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    // 1. Connect to NATS
-    // We assume the config file is at the root or we can load defaults.
-    // Ideally, we check for a file or env vars.
-    // For now, let's try to load "nats_config.json" or "../../nats_config.json"
-    let config_path = if std::path::Path::new("nats_config.json").exists() {
-        "nats_config.json"
-    } else if std::path::Path::new("../../nats_config.json").exists() {
-        "../../nats_config.json"
-    } else {
-        "nats_config.json" // Default to fail if not found
-    };
+    let config = Config::load_from_file("/home/ak/github/abrarnitk/logs-stream/config.json");
+    info!(?config, "Config loaded");
 
-    info!("Loading NATS config from: {}", config_path);
+    // 3. Connect to NATS
+    let mut nats_options = async_nats::ConnectOptions::new();
+    if let (Some(user), Some(pass)) = (&config.nats.username, &config.nats.password) {
+        nats_options = nats_options.user_and_password(user.clone(), pass.clone());
+    }
 
-    // We can also manually build config if file doesn't exist to be robust,
-    // but the requirement implies utilizing nats-utils.
-    let nats_config = match NatsConfig::load_from_file(config_path) {
-        Ok(c) => c,
-        Err(e) => {
-            tracing::warn!(
-                "Failed to load config file: {}. Using default local NATS connection.",
-                e
-            );
-            NatsConfig {
-                url: "nats://localhost:4222".to_string(),
-                username: Some("nats".to_string()),
-                password: Some("nats".to_string()),
-            }
-        }
-    };
-
-    let nats_client = nats_config
-        .connect()
+    let nats_client = async_nats::connect_with_options(&config.nats.url, nats_options)
         .await
         .expect("Failed to connect to NATS");
-    info!("Connected to NATS server at {}", nats_config.url);
+    info!("Connected to NATS at {}", config.nats.url);
 
-    // 2. Initialize App State
-    let app_state = AppState::new(nats_client);
+    // 4. Create StreamManager
+    let stream_manager = StreamManager::new(nats_client, config.relay.clone());
 
-    // 3. Setup Router
-    // We merge the API router with the static file fallback
+    // 5. Build AppState
+    let app_state = AppState::new(stream_manager, config);
+
+    // 6. Setup Router with static file fallback
     let fallback_assets_dir = std::path::Path::new("frontend/dist");
     let crate_assets_dir = std::path::Path::new("../../frontend/dist");
 
@@ -79,8 +60,8 @@ async fn main() {
         .layer(CorsLayer::permissive())
         .fallback_service(ServeDir::new(final_dir));
 
-    // 4. Start Server
+    // 7. Start Server
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    info!("listening on {}", listener.local_addr().unwrap());
+    info!("Listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app).await.unwrap();
 }

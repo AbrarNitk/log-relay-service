@@ -1,15 +1,18 @@
-use async_nats::Client;
+use crate::config::Config;
+use crate::service::stream_manager::StreamManager;
 use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub nats_client: Arc<Client>,
+    pub stream_manager: Arc<StreamManager>,
+    pub config: Arc<Config>,
 }
 
 impl AppState {
-    pub fn new(nats_client: Client) -> Self {
+    pub fn new(stream_manager: StreamManager, config: Config) -> Self {
         Self {
-            nats_client: Arc::new(nats_client),
+            stream_manager: Arc::new(stream_manager),
+            config: Arc::new(config),
         }
     }
 }

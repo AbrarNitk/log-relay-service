@@ -73,6 +73,10 @@
                             <span class="label">Streaming Run ID:</span>
                             <span id="display-run-id" class="value">--</span>
                         </div>
+                        <div class="log-counter">
+                            <span class="label">Logs:</span>
+                            <span id="log-count" class="value">0</span>
+                        </div>
                         <div class="actions">
                             <button id="clear-btn" class="btn text-only" title="Clear Logs">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -86,9 +90,16 @@
                             <button id="stop-btn" class="btn secondary small">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M18 6L6 18M6 6l12 12" />
+                                </svg>
+                                Disconnect
+                            </button>
+                            <button id="force-stop-btn" class="btn danger small" title="Force stop for ALL clients">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                                 </svg>
-                                Stop & Back
+                                Force Stop
                             </button>
                         </div>
                     </div>

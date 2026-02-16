@@ -1,1 +1,1 @@
-pub mod nats;
+pub mod stream_manager;

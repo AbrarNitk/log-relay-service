@@ -1,0 +1,13 @@
+{
+    "nats": {
+        "url": "nats://localhost:4222",
+        "username": "nats",
+        "password": "nats",
+        "stream_name": "LOGS"
+    },
+    "relay": {
+        "idle_timeout_secs": 300,
+        "broadcast_capacity": 4096,
+        "sse_keepalive_secs": 15
+    }
+}
