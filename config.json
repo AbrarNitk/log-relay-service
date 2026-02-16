@@ -9,5 +9,16 @@
         "idle_timeout_secs": 300,
         "broadcast_capacity": 4096,
         "sse_keepalive_secs": 15
+    },
+    "openobserve": {
+        "url": "http://localhost:5080",
+        "org": "default",
+        "stream": "default",
+        "user": "root@example.com",
+        "password": "Complexpass#123"
+    },
+    "archiver": {
+        "batch_size": 100,
+        "batch_timeout_secs": 5
     }
 }

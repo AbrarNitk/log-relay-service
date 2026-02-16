@@ -3,5 +3,6 @@ members = [
     "crates/server",
     "crates/nats-utils",
     "crates/generator",
+    "crates/archiver",
 ]
 resolver = "2"
