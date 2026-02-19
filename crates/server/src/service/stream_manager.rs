@@ -82,9 +82,9 @@ impl StreamManager {
     /// Get an existing shared stream or create a new one.
     ///
     /// **Race-free**: uses `DashMap::entry()` so concurrent requests for the
-    /// same `run_id` are serialized within the shard lock.
+    /// same `run_id` are serialized within the shared lock.
     pub async fn get_or_create_stream(&self, run_id: &str) -> Result<Arc<SharedStream>> {
-        // Fast path (read-only, no shard write-lock).
+        // Fast path (read-only, no shared write-lock).
         if let Some(entry) = self.streams.get(run_id) {
             if let Some(arc) = entry.upgrade() {
                 info!(run_id, "Reusing existing shared stream");
@@ -92,7 +92,7 @@ impl StreamManager {
             }
         }
 
-        // Slow path — entry API holds the shard lock.
+        // Slow path — entry API holds the shared lock.
         match self.streams.entry(run_id.to_string()) {
             dashmap::mapref::entry::Entry::Occupied(mut occ) => {
                 if let Some(arc) = occ.get().upgrade() {
