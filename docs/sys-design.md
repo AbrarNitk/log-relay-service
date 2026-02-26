@@ -1,6 +1,7 @@
 # System Design: Log Relay Service
 
 ## 1. Overview
+
 The Log Relay Service is a high-performance backend built in Rust. It serves as a dual-path log handling bridge between NATS JetStream and external consumers. 
 
 It handles two primary jobs:
