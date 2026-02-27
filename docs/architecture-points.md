@@ -13,3 +13,4 @@
   - event can be of log stream messages
   - event can be of error messages
   - event can be of termination
+- nats even can send the messages and plain binary and in the browser we can parse thee message, using nats.ws library
