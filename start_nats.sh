@@ -8,7 +8,7 @@ NATS_PASS="nats"
 
 # Stream configuration
 STREAM_NAME="LOGS"
-SUBJECTS=("logs.job.>" "logs.job_activity.>")
+SUBJECTS=("logs.>")
 
 echo "Starting NATS Server..."
 # Start NATS server in background with JetStream enabled

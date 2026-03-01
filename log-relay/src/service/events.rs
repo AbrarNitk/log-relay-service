@@ -125,6 +125,8 @@ pub enum StreamEndReason {
     ApplicationEnded,
     /// No messages arrived for the configured idle-timeout window.
     IdleTimeout,
+    /// Stream was left paused longer than `max_pause_secs` and was auto-terminated.
+    PauseTimeout,
     /// A caller invoked `ManagedStream::terminate()` explicitly.
     ForceStopped,
     /// The background NATS consumer encountered an unrecoverable error.
@@ -138,6 +140,7 @@ impl fmt::Display for StreamEndReason {
         match self {
             Self::ApplicationEnded => f.write_str("application_ended"),
             Self::IdleTimeout => f.write_str("idle_timeout"),
+            Self::PauseTimeout => f.write_str("pause_timeout"),
             Self::ForceStopped => f.write_str("force_stopped"),
             Self::NatsError(msg) => write!(f, "nats_error: {msg}"),
         }

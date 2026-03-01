@@ -28,9 +28,16 @@ use super::stream::{ManagedStream, StreamCommand};
 /// clients (with different policies) never share state accidentally.
 #[derive(Clone)]
 pub struct StreamManager {
+    // streams by stream-id
     by_stream_id: Arc<DashMap<String, Weak<ManagedStream>>>,
+
+    // streams by run-id
     by_run_id: Arc<DashMap<String, HashSet<String>>>,
+
+    // jetstream context
     js: jetstream::Context,
+
+    // relay configuration
     config: Arc<RelaySettings>,
 }
 
@@ -159,6 +166,7 @@ impl StreamManager {
         let config = Arc::clone(&self.config);
         let run_id = run_id.to_string();
         let stream_id = stream_id.to_string();
+        // todo: can we read it from the settings
         let filter_subject = format!("logs.*.*.*.{}", run_id);
         let deliver_policy = policies.deliver_policy;
         let replay_policy = policies.replay_policy;
@@ -168,6 +176,7 @@ impl StreamManager {
             tracing::info!(%stream_id, %run_id, %filter_subject, "NATS pump started");
 
             // ── Create the ephemeral ordered consumer ─────────────────────────
+
             // We use pull::OrderedConfig (not push::) to avoid the idle-heartbeat
             // negotiation that push consumers require — pull ordered consumers
             // call .messages() the same way and work with all NATS server versions.
@@ -222,9 +231,14 @@ impl StreamManager {
 
             let idle_timeout = Duration::from_secs(config.idle_timeout_secs);
             let heartbeat_interval = Duration::from_secs(config.heartbeat_interval_secs);
+            let max_pause = Duration::from_secs(config.max_pause_secs);
             let mut paused = false;
+            // None = not paused; Some(instant) = deadline after which we auto-terminate
+            let mut pause_deadline: Option<tokio::time::Instant> = None;
             let mut heartbeat_ticker = tokio::time::interval(heartbeat_interval);
             heartbeat_ticker.reset();
+
+            tracing::info!("start consuming the logs run-id: {}", run_id);
 
             let end_reason = loop {
                 tokio::select! {
@@ -239,16 +253,41 @@ impl StreamManager {
                     // ── Control command ───────────────────────────────────────
                     Some(cmd) = ctrl_rx.recv() => match cmd {
                         StreamCommand::Pause => {
+                            // note: what if people pause and forget the stream
                             paused = true;
-                            tracing::info!(%stream_id, "Paused — NATS polling suspended, messages stay in JetStream");
+                            pause_deadline = Some(tokio::time::Instant::now() + max_pause);
+                            tracing::info!(
+                                %stream_id,
+                                max_pause_secs = config.max_pause_secs,
+                                "Paused — NATS polling suspended, messages stay in JetStream"
+                            );
                         }
                         StreamCommand::Resume => {
                             paused = false;
+                            pause_deadline = None;
                             tracing::info!(%stream_id, "Resumed — NATS polling restored");
                             heartbeat_ticker.reset();
                         }
                         StreamCommand::Terminate => { break StreamEndReason::ForceStopped; }
                     },
+
+                    // ── Pause timeout ───────────────────────────────────────────────
+                    // If the stream stays paused longer than `max_pause_secs` we
+                    // auto-terminate it so the NATS consumer and broadcast channel
+                    // don’t accumulate stale state indefinitely.
+                    _ = tokio::time::sleep_until(pause_deadline.unwrap_or_else(
+                        || tokio::time::Instant::now() + Duration::from_secs(u32::MAX as u64)
+                    )), if paused => {
+                        tracing::warn!(
+                            %stream_id,
+                            max_pause_secs = config.max_pause_secs,
+                            "Stream auto-terminated: paused too long"
+                        );
+                        let _ = stream.sender.send(StreamEvent::Warning(
+                            format!("Stream auto-terminated: paused for more than {}s", config.max_pause_secs)
+                        ));
+                        break StreamEndReason::PauseTimeout;
+                    }
 
                     // ── Heartbeat ─────────────────────────────────────────────
                     _ = heartbeat_ticker.tick() => {
@@ -325,6 +364,7 @@ impl StreamManager {
 ///
 /// The payload is decoded to UTF-8 once here; non-UTF-8 bytes become `"<binary>"`.
 fn enrich_message(run_id: &str, msg: &async_nats::jetstream::Message) -> EnrichedLog {
+    // todo: how can we make it configurable
     let mut parts = msg.subject.as_str().splitn(5, '.');
     let _ = parts.next(); // "logs"
     let namespace = parts.next().unwrap_or("").to_string();

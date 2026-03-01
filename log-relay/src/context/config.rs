@@ -33,6 +33,14 @@ pub struct RelaySettings {
     pub heartbeat_interval_secs: u64,
     /// The JetStream stream name used by StreamManager when creating consumers.
     pub stream_name: String,
+    /// Max seconds a stream may remain paused before it is auto-terminated.
+    /// Prevents forgotten paused streams from holding NATS consumers open indefinitely.
+    #[serde(default = "default_max_pause_secs")]
+    pub max_pause_secs: u64,
+}
+
+fn default_max_pause_secs() -> u64 {
+    300
 }
 
 impl Config {
