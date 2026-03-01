@@ -10,7 +10,8 @@
         "broadcast_capacity": 4096,
         "sse_keepalive_secs": 15,
         "heartbeat_interval_secs": 30,
-        "stream_name": "LOGS"
+        "stream_name": "LOGS",
+        "max_pause_secs": 10
     },
     "openobserve": {
         "url": "http://localhost:5080",

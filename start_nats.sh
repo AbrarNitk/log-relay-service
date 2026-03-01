@@ -28,8 +28,15 @@ for subj in "${SUBJECTS[@]}"; do
     SUBJECT_ARGS+=("--subjects" "$subj")
 done
 
-# Create JetStream Stream using nats CLI
-echo "Creating JetStream Stream: $STREAM_NAME"
+# Delete and recreate if exists (to pick up config changes)
+if nats stream info "$STREAM_NAME" --server "$NATS_SERVER" --user "$NATS_USER" --password "$NATS_PASS" > /dev/null 2>&1; then
+    echo "Stream $STREAM_NAME already exists — deleting and recreating to apply config changes..."
+    nats stream rm "$STREAM_NAME" --force \
+        --server "$NATS_SERVER" \
+        --user "$NATS_USER" \
+        --password "$NATS_PASS"
+fi
+
 nats stream add "$STREAM_NAME" \
     "${SUBJECT_ARGS[@]}" \
     --storage file \
