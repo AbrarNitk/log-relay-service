@@ -4,10 +4,13 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-log-relay = { path = "../log-relay" }
 tokio = { workspace = true }
 axum = { workspace = true }
 tower-http = { workspace = true }
+
+# services
+log-relay = { path = "../log-relay" }
+
 
 # tracing
 tracing = { workspace = true }
