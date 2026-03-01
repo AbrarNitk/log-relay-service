@@ -28,7 +28,17 @@ pub async fn create_stream(
     let mut rx = managed.subscribe();
     let keepalive_secs = ctx.config.relay.sse_keepalive_secs;
 
+    // Clone the token BEFORE moving `managed` into the stream closure.
+    // We need a DropGuard inside the stream so the pump is cancelled the
+    // instant Axum drops this future (client disconnect, server shutdown, etc.).
+    // We cannot rely on Arc<ManagedStream>::drop() because the pump task holds
+    // its own Arc clone — refcount only goes 2→1, drop() never fires.
+    let shutdown_token = managed.shutdown_token.clone();
+
     let event_stream = async_stream::stream! {
+        // DropGuard cancels `shutdown_token` (and therefore the pump) the
+        // moment this future is dropped — loop exit OR Axum dropping mid-await.
+        let _pump_guard = shutdown_token.drop_guard();
         let _managed = managed;
 
         // Yield Connected immediately — before any recv() — so the browser
@@ -55,9 +65,14 @@ pub async fn create_stream(
                         yield Ok(ev);
                     }
                 }
-                Err(RecvError::Closed) => break,
+                Err(RecvError::Closed) => {
+                    tracing::info!("SSE broadcast channel closed — pump has exited");
+                    break;
+                }
             }
         }
+        // _pump_guard drops here (or earlier if Axum drops the future mid-await)
+        // → shutdown_token cancelled → pump select! wakes → pump exits → its Arc drops.
     };
 
     Sse::new(event_stream).keep_alive(

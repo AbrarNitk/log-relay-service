@@ -238,8 +238,15 @@ impl StreamManager {
 
                     // ── Control command ───────────────────────────────────────
                     Some(cmd) = ctrl_rx.recv() => match cmd {
-                        StreamCommand::Pause     => { paused = true;  tracing::info!(%stream_id, "Paused");   }
-                        StreamCommand::Resume    => { paused = false; tracing::info!(%stream_id, "Resumed");  }
+                        StreamCommand::Pause => {
+                            paused = true;
+                            tracing::info!(%stream_id, "Paused — NATS polling suspended, messages stay in JetStream");
+                        }
+                        StreamCommand::Resume => {
+                            paused = false;
+                            tracing::info!(%stream_id, "Resumed — NATS polling restored");
+                            heartbeat_ticker.reset();
+                        }
                         StreamCommand::Terminate => { break StreamEndReason::ForceStopped; }
                     },
 
@@ -250,8 +257,13 @@ impl StreamManager {
                         }
                     }
 
-                    // ── NATS message (with idle timeout) ──────────────────────
-                    result = tokio::time::timeout(idle_timeout, messages.next()) => {
+                    // ── NATS message — NOT polled while paused ────────────────
+                    //
+                    // The `if !paused` guard disables this branch entirely while
+                    // paused. Messages accumulate unread in JetStream; the ordered
+                    // consumer delivers them in sequence when we resume.
+                    // No ACK is sent, so nothing is skipped or lost.
+                    result = tokio::time::timeout(idle_timeout, messages.next()), if !paused => {
                         match result {
                             Err(_) => {
                                 tracing::info!(%stream_id, idle_secs = config.idle_timeout_secs, "Idle timeout");
@@ -272,21 +284,17 @@ impl StreamManager {
                                     subject = %msg.subject,
                                     "NATS message received"
                                 );
-                                if paused {
-                                    let _ = msg.ack().await;
-                                    continue;
-                                }
+                                // NOTE: no paused check here — the branch guard above
+                                // means this arm only fires when !paused.
 
                                 let enriched = enrich_message(&run_id, &msg);
                                 tracing::debug!(
                                     %stream_id,
                                     seq = enriched.sequence_id,
-                                    message = %enriched.raw_data,
                                     "Broadcasting log event"
                                 );
-                                let receiver_count = stream.sender.receiver_count();
-                                if receiver_count == 0 {
-                                    tracing::warn!(%stream_id, "No SSE subscribers — log event will be lost");
+                                if stream.sender.receiver_count() == 0 {
+                                    tracing::warn!(%stream_id, "No SSE subscribers — client likely disconnected");
                                 }
                                 let _ = stream.sender.send(StreamEvent::Log(enriched));
 
