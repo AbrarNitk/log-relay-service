@@ -42,16 +42,21 @@ and start sending them to the client.
 
 We can filter the subjects `logs.*.*.*.{run-id}` and do not need to filter at the application level.
 
-We can end the stream and termainate the sse connection after 5 minutes if there are no logs are streaming.
+We can end the stream and termainate the sse connection after 5 minutes if there are no logs to stream.
 
 The application can send a signal to the server to start or stop the stream and terminate the SSE connection.
 When the client disconnects, the server must automatically delete the consumer and clean up all associated resources.
 
+log-relay server can also keep sending the hert-beat event to the browser to tell that stream is not yet ended.
+
+
 ## Architecture & Implementation Details
 
 ### Configuration
+
 The service requires the following configuration (via file or environment variables):
 - **NATS**: URL, Credentials.
+- **STREAM_NAME** and **SUBJECT FILTER PATTERN**
 - **OpenObserve**:
   - `OPENOBSERVE_URL`: Base URL for the OpenObserve instance.
   - `OPENOBSERVE_ORG`: Organization identifier.
@@ -59,8 +64,11 @@ The service requires the following configuration (via file or environment variab
   - `OPENOBSERVE_PASSWORD`: Password/Token.
   - `OPENOBSERVE_STREAM`: Target stream name (default: `default`).
 - **Relay**:
-  - `BATCH_SIZE`: Number of logs to batch before sending (e.g., 100).
-  - `BATCH_TIMEOUT`: Max time to wait before sending a partial batch (e.g., 5s).
+  - `BATCH_SIZE`: Number of logs to batch before sending (e.g., 100). or instant for now
+  - `BATCH_TIMEOUT`: Max time to wait before sending a partial batch (e.g., 5s). or instant for now
+  - `STREAM_TIMOUT`: When should we timedout the stream
+- Buffer Size must be application hardcoded
+
 
 ### Subject Hierarchy
 
@@ -82,42 +90,3 @@ The NATS subject hierarchy `logs.<a>.<b>.<c>.<d>` maps to:
 - **SSE Endpoint**: Should be protected (e.g., via shared secret or JWT) to prevent unauthorized stream access.
 
 
-
-```
-# 1. Start NATS
-bash start_nats.sh
-# 2. Start server
-cargo run -p logs-server
-# 3. Start generator
-cargo run -p generator -- --run-id test123 --namespace dev --application myapp --component worker --pressure 5
-# 4. Connect SSE client
-curl -N http://localhost:3000/stream-logs/test123
-# 5. Stop stream (optional)
-curl -X DELETE http://localhost:3000/streams/test123
-
-```
-
-
-```
-# 1. Compile
-cargo build --workspace
-# 2. Start NATS + generator
-bash start_nats.sh
-cargo run -p generator -- --run-id test123 -n dev -a myapp --component worker -p 10
-# 3. Start archiver (with OpenObserve running)
-cargo run -p archiver
-# 4. Query OpenObserve to verify logs arrived
-curl -u "root@example.com:Complexpass#123" \
-  "http://localhost:5080/api/default/_search" \
-  -d '{"query":{"sql":"SELECT * FROM default ORDER BY _timestamp DESC LIMIT 10"}}'
-```
-
-
-```
-docker run -d \
-  --name openobserve \
-  -p 5080:5080 \
-  -e ZO_ROOT_USER_EMAIL="root@example.com" \
-  -e ZO_ROOT_USER_PASSWORD="Complexpass#123" \
-  public.ecr.aws/zinclabs/openobserve:latest
-```

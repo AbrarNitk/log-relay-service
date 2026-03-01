@@ -32,6 +32,8 @@ pub async fn stream_logs(
                         .data(format!("Failed to connect to log stream: {}", e))
                 );
             };
+
+            // should we return sse or simple error message, must be the browser compatible
             return Sse::new(error_stream)
                 .keep_alive(
                     KeepAlive::new()

@@ -14,6 +14,7 @@ pub struct NatsSettings {
     pub username: Option<String>,
     pub password: Option<String>,
     pub stream_name: String,
+    // todo: filter-subject-pattern
 }
 
 /// Relay tuning knobs for the StreamManager.

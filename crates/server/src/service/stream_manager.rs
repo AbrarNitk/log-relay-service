@@ -22,6 +22,7 @@ use crate::config::RelaySettings;
 pub struct SharedStream {
     pub run_id: String,
 
+    // todo: other params, like from where it is started and all, sequence and all
     /// Bounded broadcast channel — sends raw `Bytes` from NATS.
     /// Receivers are created per SSE client via `sender.subscribe()`.
     pub sender: broadcast::Sender<Bytes>,
@@ -127,6 +128,13 @@ impl StreamManager {
         }
         false
     }
+
+    // functions we want to have
+    // create: stream
+    // start: stream
+    // pause stream, with pause-timeout till then we can send the
+    // resume stream
+    // stream: status
 
     /// Returns the number of currently active streams (for /health diagnostics).
     pub fn active_count(&self) -> usize {
