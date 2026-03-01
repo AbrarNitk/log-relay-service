@@ -137,9 +137,9 @@ impl StreamManager {
     // stream: status
 
     /// Returns the number of currently active streams (for /health diagnostics).
-    pub fn active_count(&self) -> usize {
-        self.streams.len()
-    }
+    // pub fn active_count(&self) -> usize {
+    //     self.streams.len()
+    // }
 
     // ----- internals --------------------------------------------------------
 

@@ -35,17 +35,67 @@
                 <div class="card glass fade-in-up">
                     <div class="card-header">
                         <h1>Start Streaming</h1>
-                        <p>Enter the Run ID to connect to the live log stream.</p>
+                        <p>Connect to a live NATS JetStream log feed.</p>
                     </div>
 
                     <form id="stream-form">
+                        <!-- Run ID -->
                         <div class="form-group">
                             <label for="run-id">Run ID</label>
                             <div class="input-wrapper">
-                                <input type="text" id="run-id" placeholder="e.g. 12345" autocomplete="off" required>
+                                <input type="text" id="run-id" placeholder="e.g. prod-worker-001" autocomplete="off"
+                                    required>
                                 <span class="input-focus-border"></span>
                             </div>
                         </div>
+
+                        <!-- Delivery Policy -->
+                        <div class="form-group">
+                            <label for="delivery-policy">Delivery Policy</label>
+                            <div class="input-wrapper">
+                                <select id="delivery-policy" onchange="onDeliveryChange()">
+                                    <option value="new">New — live tail</option>
+                                    <option value="all">All — from beginning</option>
+                                    <option value="last">Last — most recent message</option>
+                                    <option value="last_per_subject">Last Per Subject</option>
+                                    <option value="by_start_seq">By Start Sequence</option>
+                                    <option value="by_start_time">By Start Time</option>
+                                </select>
+                                <span class="input-focus-border"></span>
+                            </div>
+                        </div>
+
+                        <!-- Start Sequence (shown only for by_start_seq) -->
+                        <div class="form-group" id="opt-seq" style="display:none">
+                            <label for="start-seq">Start Sequence #</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="start-seq" placeholder="e.g. 1000" min="1">
+                                <span class="input-focus-border"></span>
+                            </div>
+                        </div>
+
+                        <!-- Start Time (shown only for by_start_time) -->
+                        <div class="form-group" id="opt-time" style="display:none">
+                            <label for="start-time">Start Time</label>
+                            <div class="input-wrapper">
+                                <input type="datetime-local" id="start-time" step="1">
+                                <span class="input-focus-border"></span>
+                            </div>
+                        </div>
+
+                        <!-- Replay Policy -->
+                        <div class="form-group">
+                            <label for="replay-policy">Replay Policy</label>
+                            <div class="input-wrapper">
+                                <select id="replay-policy">
+                                    <option value="instant">Instant</option>
+                                    <option value="original">Original timing</option>
+                                </select>
+                                <span class="input-focus-border"></span>
+                            </div>
+                        </div>
+
+                        <!-- Filter -->
                         <div class="form-group">
                             <label for="filter-pattern">Filter Pattern (Optional)</label>
                             <div class="input-wrapper">
@@ -53,6 +103,7 @@
                                 <span class="input-focus-border"></span>
                             </div>
                         </div>
+
                         <button type="submit" class="btn primary glow-effect">
                             Start Stream
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -78,6 +129,14 @@
                             <span id="log-count" class="value">0</span>
                         </div>
                         <div class="actions">
+                            <button id="pause-btn" class="btn secondary small">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="6" y="4" width="4" height="16"></rect>
+                                    <rect x="14" y="4" width="4" height="16"></rect>
+                                </svg>
+                                Pause
+                            </button>
                             <button id="clear-btn" class="btn text-only" title="Clear Logs">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -94,12 +153,13 @@
                                 </svg>
                                 Disconnect
                             </button>
-                            <button id="force-stop-btn" class="btn danger small" title="Force stop for ALL clients">
+                            <button id="force-stop-btn" class="btn danger small"
+                                title="Terminate stream for all clients">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                                 </svg>
-                                Force Stop
+                                Terminate
                             </button>
                         </div>
                     </div>
@@ -110,6 +170,7 @@
                             <div class="circle yellow"></div>
                             <div class="circle green"></div>
                             <span class="terminal-title">Output</span>
+                            <span id="stream-id-badge" class="stream-id-badge"></span>
                         </div>
                         <div id="logs-container" class="terminal-body custom-scrollbar">
                             <div id="logs-output"></div>
@@ -121,7 +182,7 @@
         </main>
 
         <footer>
-            <p>&copy; 2026 LogStream. Powered by Rust & Axum.</p>
+            <p>&copy; 2026 LogStream. Powered by Rust &amp; Axum.</p>
         </footer>
     </div>
     <script type="module" src="app.js"></script>

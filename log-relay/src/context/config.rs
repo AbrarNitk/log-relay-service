@@ -13,19 +13,26 @@ pub struct NatsSettings {
     pub url: String,
     pub username: Option<String>,
     pub password: Option<String>,
+    /// The JetStream stream name to subscribe to (e.g. "LOGS").
     pub stream_name: String,
-    // todo: filter-subject-pattern
+    /// Subject filter pattern for archiving. Defaults to `logs.>`.
+    pub filter_subject: Option<String>,
 }
 
 /// Relay tuning knobs for the StreamManager.
 #[derive(Debug, Clone, Deserialize)]
 pub struct RelaySettings {
-    /// Seconds of inactivity before an idle stream is cleaned up.
+    /// Seconds of inactivity (no NATS messages) before an idle stream is cleaned up.
     pub idle_timeout_secs: u64,
     /// Capacity of the bounded broadcast channel per run_id.
+    /// Larger values tolerate slow consumers at the cost of memory.
     pub broadcast_capacity: usize,
-    /// SSE keep-alive interval in seconds.
+    /// SSE keep-alive interval in seconds (HTTP layer ping, independent of heartbeat events).
     pub sse_keepalive_secs: u64,
+    /// How often to emit a `Heartbeat` SSE event when no log messages are arriving.
+    pub heartbeat_interval_secs: u64,
+    /// The JetStream stream name used by StreamManager when creating consumers.
+    pub stream_name: String,
 }
 
 impl Config {

@@ -11,6 +11,14 @@ serde_json = { workspace = true }
 async-nats = { workspace = true }
 time = { version = "0.3.47", features = ["parsing"] }
 
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+tokio-stream = { workspace = true }
+bytes = { workspace = true }
+dashmap = { workspace = true }
+futures = { workspace = true }
+async-stream = { workspace = true }
+ulid = { workspace = true }
 
 # tracing
 tracing = { workspace = true }

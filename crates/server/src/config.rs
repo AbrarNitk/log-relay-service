@@ -13,7 +13,7 @@ pub struct NatsSettings {
     pub url: String,
     pub username: Option<String>,
     pub password: Option<String>,
-    pub stream_name: String,
+    // pub stream_name: String,
     // todo: filter-subject-pattern
 }
 

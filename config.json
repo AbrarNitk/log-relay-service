@@ -8,7 +8,9 @@
     "relay": {
         "idle_timeout_secs": 300,
         "broadcast_capacity": 4096,
-        "sse_keepalive_secs": 15
+        "sse_keepalive_secs": 15,
+        "heartbeat_interval_secs": 30,
+        "stream_name": "LOGS"
     },
     "openobserve": {
         "url": "http://localhost:5080",
