@@ -16,8 +16,7 @@
 
 ## Questions
 
-- by default where shpuld we stream the logs
-
+- by default where should we stream the logs
 
 ## Deferred Or V2
 
